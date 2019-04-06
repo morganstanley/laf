@@ -1,0 +1,27 @@
+language: python
+
+#
+# Test test matrix is spelled out explicitly here.
+#
+# For each supported version of Python, we will test with coverage.
+#
+matrix:
+  include:
+  - python: 3.6
+    env: TOXENV=pep8
+  - python: 3.6
+    env: TOXENV=pylint
+  - python: 3.4
+    env: TOXENV=py34
+  - python: 3.6
+    env: TOXENV=py36
+
+
+install:
+- pip install tox
+
+script:
+- tox -vvv
+
+notifications:
+  email: false

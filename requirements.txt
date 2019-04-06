@@ -1,0 +1,16 @@
+click>=6.6
+Flask>=0.11.1
+flask-accept>=0.0.5
+Flask-Cors>=3.0.3
+gunicorn>=19.6.0
+itsdangerous>=0.22
+Jinja2>=2.8
+jsonschema>=2.5.1
+kazoo>=2.5.0
+kerberos>=1.2.5
+MarkupSafe>=0.23
+PyYAML>=3.12
+pyzmq>=16.0.2
+requests>=2.11.1
+six>=1.10.0
+Werkzeug>=0.11.10
