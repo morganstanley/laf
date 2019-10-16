@@ -4,6 +4,7 @@ import copy
 import glob
 import logging
 import os
+import sys
 import asyncio
 import asyncio.subprocess
 import http.client
@@ -284,6 +285,8 @@ def httpreq(loop, future, url, method, req, auth,
                 loop.call_soon(loop.stop)
             return
         if response1.status_code == http.client.ACCEPTED:
+            resp = response1.json()['status']
+            print('{0}'.format(resp), file=sys.stderr)
             time.sleep(_LAF_LR_REQ_PAUSE)
             url = 'http://{0}/'.format(hostport)
             url = url + response1.headers['location']

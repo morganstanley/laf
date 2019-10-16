@@ -5,7 +5,6 @@ LAF worker process
 import http.client
 import json
 import logging
-import multiprocessing
 import os
 import sys
 import yaml
@@ -24,17 +23,21 @@ LONE_MODULE_PATH = 'lib/python'
 LAFSVR_CONFIG_FILE = 'etc/laf-server.yml'
 
 
-class Worker(multiprocessing.Process):
+class Worker():
     """ LAF Worker"""
-    def __init__(self, basedir, w_socket_url, deployment):
-        super().__init__()
-        self.laf_worker_config = self.setup_config(basedir, deployment)
-        os.environ['LAF_DEPLOYMENT'] = deployment
-        self.w_socket_url = w_socket_url
+    def __init__(self, basedir):
+        self.deployment = os.environ['LAF_DEPLOYMENT']
+        self.w_socket_url = os.environ['WORKER_SOCKET']
+        self.basedir = basedir
 
     def run(self):
+        """
+        Worker run logic
+        """
         #  Wait for next request from client
         _LOG.info('Worker starting with pid %s', os.getpid())
+        laf_worker_config = self.setup_config(self.basedir,
+                                              self.deployment)
         context = zmq.Context()
         socket = context.socket(zmq.DEALER)
         socket.identity = (u"Worker-%d" % (os.getpid())).encode()
@@ -49,12 +52,12 @@ class Worker(multiprocessing.Process):
                 _, address, _, req = socket.recv_multipart()
                 _LOG.debug("%s: %s\n",
                            socket.identity.decode(),
-                           req.decode(), end='')
+                           req.decode())
                 # actual laf work
                 final_req = json.loads(req.decode())
                 req_obj = request.Request(**final_req['request'])
                 auth_result = final_req['auth']
-                lone_obj = self.laf_worker_config['lones'][req_obj.lone]
+                lone_obj = laf_worker_config['lones'][req_obj.lone]
                 req_handler = handler.get_handler(req_obj, lone_obj)
                 if handler.is_async_request(req_handler, lone_obj.mode):
                     long_running = True
@@ -63,7 +66,7 @@ class Worker(multiprocessing.Process):
                     final_result = json.dumps(result).encode()
                     socket.send_multipart([b'', address, b'', final_result])
                 (resp, code) = handler.process_req(
-                    self.laf_worker_config['config'],
+                    laf_worker_config['config'],
                     lone_obj,
                     req_obj,
                     auth_result)

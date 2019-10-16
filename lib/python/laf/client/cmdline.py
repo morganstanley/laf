@@ -131,7 +131,7 @@ def _get_framework_opts(lonename, args):
     while args:
         arg = args.pop(0)
         # We start at the first non-option parameter on the CLI
-        if not arg.startswith('--'):
+        if not arg.startswith('--'):  # pylint: disable=R1723
             args.insert(0, arg)
             break
         else:
@@ -313,7 +313,7 @@ def _get_yaml_from_cmdline(args):
     """
     rest = []
     for arg in enumerate(args):
-        if arg[1].startswith('---'):
+        if arg[1].startswith('---'):  # pylint: disable=R1723
             obj = yaml.load(' '.join(args[arg[0]:]))
             break
         else:
@@ -426,7 +426,7 @@ def get_cmdline(loneclass, rootdir, luser, lhost, args=sys.argv):
                 'path': None,
                 'body': None}
 
-    if not rest:
+    if len(rest) < 1:
         # No verb were given on the command line, no need to go further
         raise UsageException(lonename, reason='usage <verb> <pk>')
 
@@ -435,7 +435,7 @@ def get_cmdline(loneclass, rootdir, luser, lhost, args=sys.argv):
 
     # Help shortcut: get the documentation from the lone
     if verb == 'help':
-        import pydoc
+        import pydoc  # pylint: disable=C0415
         pydoc.getpager()(loneclass.help())
         sys.exit(0)
 
@@ -472,13 +472,13 @@ def get_cmdline(loneclass, rootdir, luser, lhost, args=sys.argv):
             verb=verb)
     body = yaml_input
     # We are expecting rest to be either 'verb' or 'verb pk'
-    if not rest:
+    if len(rest) == 0:  # pylint: disable=R1720
         # Something wrong happened
         raise UsageException(
             lonename,
             reason='Error parsing command line: %s' % rest,
             verb=verb)
-    if len(rest) == 1:
+    elif len(rest) == 1:
         pk = None
         path = None
     elif len(rest) == 2:

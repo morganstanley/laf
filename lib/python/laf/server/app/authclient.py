@@ -51,7 +51,8 @@ def authorize(request, version):
                              req['pk'],
                              req['obj'],
                              req['user'],
-                             req['host'])
+                             req['host'],
+                             req['txid'])
     auth_res = dict()
     auth_res['auth'] = response
     return auth_res['auth']
@@ -91,7 +92,8 @@ def obo_authorize(request, version):
                              req['pk'],
                              req['obj'],
                              req['user'],
-                             req['host'])
+                             req['host'],
+                             req['txid'])
     auth_res = dict()
     auth_res['oboauth'] = response
     return auth_res['oboauth']

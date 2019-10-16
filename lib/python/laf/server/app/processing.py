@@ -102,6 +102,7 @@ def authorize(req_obj, version):
             req_obj.pk,
             req_obj.obj,
             req_obj.user,
-            req_obj.host)
+            req_obj.host,
+            req_obj.txid)
     _LOG.info('[%s]: Request authorized', req_obj.txid)
     return auth_res

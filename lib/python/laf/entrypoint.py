@@ -5,12 +5,27 @@ LAF broker startup
 
 import argparse
 import logging
+import sys
 
 from laf.server import logger
 from laf.server import broker
 from laf import laf_server_gunicorn
+from laf.server import worker
 
 _LOG = logging.getLogger()
+
+
+def laf_worker_start():
+    """
+    LAF Worker start up
+    """
+    logger.init()
+    if len(sys.argv) < 2:
+        sys.exit('basedir missing')
+    basedir = sys.argv[1]
+    _LOG.info("input argument basedir: %s", basedir)
+    loneworker = worker.Worker(basedir)
+    loneworker.run()
 
 
 def laf_broker_start():
@@ -31,9 +46,9 @@ def laf_broker_start():
     parser.add_argument('--worker_socket',
                         default="ipc://@backend.ipc",
                         help='backend socket for broker')
-    parser.add_argument('--custom_worker_bin', required=False,
+    parser.add_argument('--worker_bin', required=False,
                         default=None,
-                        help='custom worker binary')
+                        help='worker binary')
     parser.add_argument('--deployment', required=True,
                         help='Deployment of LAF Server')
     parser.add_argument('--notify_sock',
@@ -42,14 +57,14 @@ def laf_broker_start():
                         help='journal process socket')
     args = parser.parse_args()
     _LOG.info("""input argument basedir: %s, workers:%s,
-              daemon %s, custom worker bin:%s, deployment:%s""",
+              daemon %s, worker bin:%s, deployment:%s""",
               args.basedir, args.workers, args.daemon,
-              args.custom_worker_bin, args.deployment)
+              args.worker_bin, args.deployment)
     broker.main(args.basedir,
                 args.workers, args.daemon,
                 args.client_socket,
                 args.worker_socket,
-                args.custom_worker_bin,
+                args.worker_bin,
                 args.deployment,
                 args.notify_sock,
                 args.journal_sock)

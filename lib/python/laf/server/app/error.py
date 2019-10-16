@@ -24,7 +24,8 @@ class APIError(Exception):
                  primaryk=None,
                  obj=None,
                  user=None,
-                 host=None):
+                 host=None,
+                 txid=None):
         super(APIError, self).__init__(self)
         try:
             self.message = message.decode()
@@ -38,6 +39,7 @@ class APIError(Exception):
         self.obj = obj
         self.user = user
         self.host = host
+        self.txid = txid
 
     def error_message(self):
         """
@@ -50,13 +52,14 @@ class APIError(Exception):
                             self.primaryk,
                             self.obj,
                             self.user,
-                            self.host)
+                            self.host,
+                            self.txid)
         else:
             out = {'_error': self.message}
         return out
 
 
-def gen_error(why, where, verb, primary_k, obj, luser, lhost):
+def gen_error(why, where, verb, primary_k, obj, luser, lhost, txid=None):
     """
     Generate an error reporting dict
     If we were given a lone instance, use it to print more info
@@ -84,5 +87,6 @@ def gen_error(why, where, verb, primary_k, obj, luser, lhost):
                         'verb': verb,
                         'pk': primary_k,
                         'in': obj,
-                        'from': host}}
+                        'from': host,
+                        'txid': txid}}
     return reply

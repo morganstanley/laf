@@ -214,7 +214,9 @@ def generate_resp_obj(content_type, responses):
         "additionalProperties": False,
     }
     for resp_key, resp_val in responses.items():
-        if 'content' in responses[resp_key]:
+        if 'content' in responses[resp_key] and (
+                'schema' in resp_val['content'][content_type]
+        ):
             resp_obj['properties'][resp_key] = resp_val[
                 'content'][content_type]['schema']
         else:

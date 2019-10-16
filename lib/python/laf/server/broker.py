@@ -15,7 +15,6 @@ import zmq  # pylint: disable=E0401
 # E0401: Unable to import 'zmq.eventloop.zmqstream'
 from zmq.eventloop.ioloop import IOLoop  # pylint: disable=E0401
 from zmq.eventloop.zmqstream import ZMQStream  # pylint: disable=E0401
-from laf.server import worker
 
 _LOG = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ class LRUQueue():
                 frontend_url=None,
                 basedir=None,
                 daemon_flag=None,
-                custom_worker_bin=None,
+                worker_bin=None,
                 deployment=None):
         _LOG.debug('lruqueue instance called %s', LRUQueue.__instance)
         if LRUQueue.__instance is None:
@@ -52,7 +51,7 @@ class LRUQueue():
             LRUQueue.__instance.workers = dict()
             LRUQueue.__instance.basedir = basedir
             LRUQueue.__instance.daemon = daemon_flag
-            LRUQueue.__instance.custom_worker_bin = custom_worker_bin
+            LRUQueue.__instance.worker_bin = worker_bin
             LRUQueue.__instance.deployment = deployment
             _LOG.debug('lruqueue instance new done')
         return LRUQueue.__instance
@@ -103,8 +102,7 @@ class LRUQueue():
                     _LOG.exception("Error in worker - %r", err)
                 else:
                     return
-        _LOG.debug('server busy ; worker list is %r',
-                   self.workers)
+        _LOG.debug('server busy ; worker list is %r', self.workers)
         _LOG.info('SERVICE UNAVAILABLE')
         message = {'status': 'Try again server busy'}
         result = {'resp': message, 'code': http.client.SERVICE_UNAVAILABLE}
@@ -133,58 +131,44 @@ def signal_handler(signum, _):
         queue.workers.pop(workername.encode())
         _LOG.debug('signal handler worker list is %r',
                    queue.workers)
-        if queue.custom_worker_bin:
-            custom_worker_env = {
-                'WORKER_SOCKET': queue.backend_url,
-                'DEPLOYMENT': queue.deployment
-            }
-            if 'NOTIFICATION_SOCK' in os.environ:
-                custom_worker_env['NOTIFICATION_SOCK'] = os.environ[
-                    'NOTIFICATION_SOCK']
-            if 'JOURNAL_SOCK' in os.envrion:
-                custom_worker_env['JOURNAL_SOCK'] = os.environ[
-                    'JOURNAL_SOCK']
-            subprocess.Popen([queue.custom_worker_bin, queue.basedir],
-                             env=queue.customer_worker_env, shell=False)
-        else:
-            laf_worker = worker.Worker(queue.basedir,
-                                       queue.backend_url,
-                                       queue.deployment)
-            laf_worker.daemon = queue.daemon
-            laf_worker.start()
+        worker_env = {
+            'WORKER_SOCKET': queue.backend_url,
+            'LAF_DEPLOYMENT': queue.deployment
+        }
+        if 'NOTIFICATION_SOCK' in os.environ:
+            worker_env['NOTIFICATION_SOCK'] = os.environ[
+                'NOTIFICATION_SOCK']
+        if 'JOURNAL_SOCK' in os.envrion:
+            worker_env['JOURNAL_SOCK'] = os.environ[
+                'JOURNAL_SOCK']
+            subprocess.Popen([queue.worker_bin, queue.basedir],
+                             env=queue.worker_env, shell=False)
 
 
 def main(basedir, n_workers, daemon_flag,
          client_socket, worker_socket,
-         custom_worker_bin, deployment, notify_socket,
+         worker_bin, deployment, notify_socket,
          journal_socket):
     """main method"""
     # create queue with the sockets
     signal.signal(signal.SIGCHLD, signal_handler)
     LRUQueue(worker_socket, client_socket,
-             basedir, daemon_flag, custom_worker_bin,
+             basedir, daemon_flag, worker_bin,
              deployment)
-    custom_worker_env = {
+    worker_env = {
         'WORKER_SOCKET': worker_socket,
-        'DEPLOYMENT': deployment
+        'LAF_DEPLOYMENT': deployment
     }
     if notify_socket:
         os.environ['NOTIFICATION_SOCK'] = notify_socket
-        custom_worker_env['NOTIFICATION_SOCK'] = notify_socket
+        worker_env['NOTIFICATION_SOCK'] = notify_socket
     if journal_socket:
         os.environ['JOURNAL_SOCK'] = journal_socket
-        custom_worker_env['JOURNAL_SOCK'] = journal_socket
+        worker_env['JOURNAL_SOCK'] = journal_socket
     for _ in range(int(n_workers)):
-        if custom_worker_bin:
-            subprocess.Popen([custom_worker_bin, basedir],
-                             env=custom_worker_env,
-                             shell=False)
-        else:
-            laf_worker = worker.Worker(basedir,
-                                       worker_socket,
-                                       deployment)
-            laf_worker.daemon = daemon_flag
-            laf_worker.start()
+        subprocess.Popen([worker_bin, basedir],
+                         env=worker_env,
+                         shell=False)
 
     # start reactor
     IOLoop.instance().start()

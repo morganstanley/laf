@@ -1,10 +1,12 @@
-# ignore compile/temporary files
+# Ignore compiled/temporary files
 __pycache__
 *.py[co]
 .*
 
-venv/
+docs/source/api
+docs/_build
 
+venv/
 
 # Keep track of .keepme files
 !.keepme
@@ -15,4 +17,3 @@ lib/python/*.egg-info/*
 # Ensure that .git* files are included
 !.gitignore
 !.gitattributes
-!.travis.yml
