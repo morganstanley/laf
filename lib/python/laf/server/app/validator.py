@@ -91,7 +91,7 @@ def validate_input(req_validator, para_types,
     return obj
 
 
-# pylint: disable=R0911
+# pylint: disable=R0911,R1721
 def get_queryarg_data(data, valtype, style='form', explode=False):
     """
     Deserialize data based on style in openapi

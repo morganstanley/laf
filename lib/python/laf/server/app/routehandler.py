@@ -85,7 +85,8 @@ def request_handling(req, version):
                              req.pk,
                              req.obj,
                              req.user,
-                             req.host)
+                             req.host,
+                             req.txid)
     return (resp, status_code)
 
 
@@ -201,7 +202,8 @@ def handle_route(lone=None,
                                  final_req['pk'],
                                  final_req['obj'],
                                  final_req['user'],
-                                 final_req['host'])
+                                 final_req['host'],
+                                 final_req['txid'])
     validator.validate_response(resp_validator,
                                 resp,
                                 status_code,

@@ -13,6 +13,8 @@ from flask import Flask, g, make_response, Blueprint, request
 # E0401: Unable to import 'flask_cors'
 from flask_cors import CORS  # pylint: disable=E0401
 import flask_accept  # pylint: disable=E0401
+# E0401: Unable to import 'flask_swagger_ui'
+from flask_swagger_ui import get_swaggerui_blueprint  # pylint: disable=E0401
 from jsonschema import Draft4Validator, RefResolver
 import yaml
 from laf.server.app import config
@@ -26,16 +28,16 @@ from laf.server.app import wsgiplugin
 # W0611: unused-import
 import laf.server.gunicornpatch  # pylint: disable=W0611
 _LOG = logging.getLogger(__name__)
-
+LAFSVR_CONFIG_FILE = 'etc/laf-server.yml'
 APP = Flask(__name__)
 CORS(APP)
 MIME_REGEX = re.compile(r'^application/(.+)\+(yaml|json)$')
 DEFAULT_MIME_TYPES = ['application/yaml', 'application/json']
 
 
-def lone_latest_version(basedir, family, lone):
+def get_latest_schema(basedir, family, lone):
     """
-    Get the latest version of lone
+    Get the latest openapi spec for lone
     """
     openapi_dir = os.path.join(basedir, 'apischemas', 'openapi')
     family = '_'.join(family.split('/'))
@@ -43,6 +45,14 @@ def lone_latest_version(basedir, family, lone):
     lone_files = glob.glob(pattern)
     lone_files.sort(reverse=True)
     lone_file_name = os.path.basename(lone_files[0])
+    return lone_file_name
+
+
+def lone_latest_version(basedir, family, lone):
+    """
+    Get the latest version of lone
+    """
+    lone_file_name = get_latest_schema(basedir, family, lone)
     latest_version = '.'.join(lone_file_name.split('.')[-3::])
     return latest_version
 
@@ -248,6 +258,37 @@ def add_lone_path(apifile, family, major_version,
                                       resolver)
 
 
+def register_api_docs(lone, basedir, family):
+    """
+    Register blueprint for each lone apis docs
+    """
+    filename = get_latest_schema(basedir, family, lone)
+    swagger_url = '/{0}/_docs'.format(lone)
+    api_url = '/{0}/_static/{1}'.format(lone, filename)
+    lone_url = '/{0}/_static/<string:filename>'.format(lone)
+    family_name = '_'.join(family.split('/'))
+    lone_name = '{0} {1} resource'.format(family_name, lone)
+    lonedocs_name = '{0}_{1}'.format(family_name, lone)
+    swaggerui_blueprint = get_swaggerui_blueprint(
+        swagger_url,
+        api_url,
+        config={
+            'app_name': lone_name
+        },
+        blueprint_name=lonedocs_name
+    )
+    docs_name = '{0}_{1}_{2}'.format(family_name, lone, 'docs')
+    APP.register_blueprint(swaggerui_blueprint, url_prefix=swagger_url)
+
+    docs_blue = Blueprint(docs_name, __name__)
+    docs_blue.add_url_rule(lone_url,
+                           strict_slashes=False,
+                           methods=['GET'],
+                           endpoint=docs_name,
+                           view_func=generalhandler.get_api_docs)
+    APP.register_blueprint(docs_blue)
+
+
 def create_app(basedir, client_socket,
                deployment,
                auth_type,
@@ -285,6 +326,15 @@ def create_app(basedir, client_socket,
     for lonename, loneval in lone_bprint.items():
         if lone_bprint[lonename]['blueprint'] is not None:
             APP.register_blueprint(loneval['blueprint'])
+    # register api doc paths
+    srvconfigfile = os.path.join(basedir, LAFSVR_CONFIG_FILE)
+    with open(srvconfigfile) as stream:
+        svr_cfg = yaml.load(stream)
+        if 'lones' in svr_cfg:
+            for lone in svr_cfg['lones']:
+                register_api_docs(lone,
+                                  lafcfg['basedir'],
+                                  lafcfg['family'])
 
     status_blue = Blueprint('status_blueprint', __name__)
     status_blue.add_url_rule('/<uuid:rqid>',

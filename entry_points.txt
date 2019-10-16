@@ -3,6 +3,7 @@
 [console_scripts]
 laf_server_gunicorn = laf.entrypoint:laf_server_gunicorn_start
 laf_broker = laf.entrypoint:laf_broker_start
+laf_worker = laf.entrypoint:laf_worker_start
 
 [authentication_mechanism]
 noauth = laf.server.app.wsgiplugin.noauth

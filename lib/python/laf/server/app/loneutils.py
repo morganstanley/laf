@@ -212,7 +212,7 @@ def jsonschema_validation(laf_family_base, schemafile, mimetype,
     return results
 
 
-# pylint: disable=R0911
+# pylint: disable=R0911,R1721
 def get_queryarg_data(data, valtype, style='form', explode=False):
     """
     Deserialize data based on style in openapi

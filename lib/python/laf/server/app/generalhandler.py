@@ -2,9 +2,10 @@
 Main function to handle requests
 """
 
-import logging
 import http.client
-from flask import make_response, g
+import logging
+import os
+from flask import make_response, g, current_app, send_file
 from laf.server.app import routehandler
 
 _LOG = logging.getLogger(__name__)
@@ -16,7 +17,8 @@ def create_response(resp, status_code):
     """
     if status_code == http.client.ACCEPTED:
         location = resp
-        resp = {'status': 'Task in progress'}
+        resp_msg = 'Task in progress {0}'.format(location.split('/')[2])
+        resp = {'status': resp_msg}
     encoder = g.encoder
     resp = make_response(encoder.encode(resp), status_code)
     if status_code == http.client.ACCEPTED:
@@ -52,3 +54,13 @@ def task_status_function(rqid):
     resp = make_response(encoder.encode(resp), status_code)
     resp.headers['Content-Type'] = g.best_accept
     return resp
+
+
+def get_api_docs(filename):
+    """
+    Get the latest openapi 3.0 documentation
+    """
+    basedir = current_app.config['config']['basedir']
+    openapi_dir = os.path.join(basedir, 'apischemas', 'openapi')
+    docfile = os.path.join(openapi_dir, filename)
+    return send_file(docfile)

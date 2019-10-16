@@ -10,11 +10,18 @@ matrix:
   - python: 3.6
     env: TOXENV=pep8
   - python: 3.6
-    env: TOXENV=pylint
-  - python: 3.4
-    env: TOXENV=py34
+    env: TOXENV=py36-pylint
   - python: 3.6
-    env: TOXENV=py36
+    env: TOXENV=docs
+
+  - python: 3.4
+    env: TOXENV=py34-pytest
+  - python: 3.6
+    env: TOXENV=py36-pytest
+
+  # Failures on these unsupported python versions are allowed
+  # allow_failures:
+  # - env: TOXENV=
 
 
 install:

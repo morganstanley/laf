@@ -144,7 +144,7 @@ def local_journal_write(configdict, msg):
     Calling journal cli
     """
     if (
-            'primary_journal' not in configdict or
+            'primary_journal' not in configdict and
             'secondary_journal' not in configdict or
             'JOURNAL_BINARY' not in os.environ
     ):
@@ -153,8 +153,10 @@ def local_journal_write(configdict, msg):
                       msg['step'])
         return
     cmd = os.environ['JOURNAL_BINARY']
-    primary = configdict['primary_journal']
-    secondary = configdict['secondary_journal']
+    if 'primary_journal' in configdict:
+        primary = configdict['primary_journal']
+    if 'secondary_journal' in configdict:
+        secondary = configdict['secondary_journal']
     adminproid = configdict['remoteid']
     json_data = json.dumps(msg)
     msglen = len(json_data)
@@ -170,7 +172,7 @@ def local_journal_write(configdict, msg):
     cmdlist.append("--adminproid")
     cmdlist.append(adminproid)
     try:
-        subprocess.check_output(cmdlist, input=indata)
+        subprocess.check_output(cmdlist, input=indata)  # pylint: disable=E1123
     except subprocess.CalledProcessError as ex:
         _LOG.critical('[%s]: Unsaved Journal entry %s:%s',
                       msg['transaction_id'],
