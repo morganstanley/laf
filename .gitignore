@@ -1,0 +1,19 @@
+# Ignore compiled/temporary files
+__pycache__
+*.py[co]
+.*
+
+docs/source/api
+docs/_build
+
+venv/
+
+# Keep track of .keepme files
+!.keepme
+
+# Ignore generated files
+lib/python/*.egg-info/*
+
+# Ensure that .git* files are included
+!.gitignore
+!.gitattributes
